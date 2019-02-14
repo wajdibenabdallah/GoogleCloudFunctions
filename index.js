@@ -55,9 +55,9 @@ exports.generateSFEIRCV = (req, res) => {
                         pdf.create(htmlTextContent, {format: 'A4'})
                             .toBuffer(function (error, buffer) {
                                 if (error) return console.log(error);
-                                const myFileBucket = bucket.file(cvName, {
-                                    encryptionKey: Buffer.from(oldKey, 'base64'),
-                                });
+                                const myFileBucket = bucket.file(cvName);
+                                const encryptionKey = crypto.randomBytes(32);
+                                myFileBucket.setEncryptionKey(encryptionKey);
                                 myFileBucket.save(buffer).then(() => {
                                     myFileBucket.makePublic().then(() => {
                                         console.log('The file is public now');
