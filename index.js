@@ -41,15 +41,23 @@ exports.generateSFEIRCV = (req, res) => {
                     if (process.env.NODE_ENV === 'development') {
                         htmlTextContent = fs.readFileSync(path.join(__dirname, '/test_data/test.html'), 'utf8');
                         pdf.create(htmlTextContent, {format: 'A4'})
-                            .toFile('./test.pdf', function (err, res) {
+                            .toBuffer(function (err, buffer) {
                                 if (err) return console.log(err);
-                                console.log(res);
+                                fs.writeFile("test1.pdf", buffer, "binary", function (err) {
+                                    if (err) {
+                                        res.send(err);
+                                    } else {
+                                        res.send("The file was saved!");
+                                    }
+                                });
                             });
                     } else if (process.env.NODE_ENV === 'production') {
                         pdf.create(htmlTextContent, {format: 'A4'})
                             .toBuffer(function (error, buffer) {
                                 if (error) return console.log(error);
-                                const myFileBucket = bucket.file(cvName);
+                                const myFileBucket = bucket.file(cvName, {
+                                    encryptionKey: Buffer.from(oldKey, 'base64'),
+                                });
                                 myFileBucket.save(buffer).then(() => {
                                     myFileBucket.makePublic().then(() => {
                                         console.log('The file is public now');
@@ -120,5 +128,5 @@ app.post('/', (req, res) => {
 })
 
 app.listen(4500, () => {
-    console.log('server running in environment => '+ process.env.NODE_ENV);
+    console.log('server running in environment => ' + process.env.NODE_ENV);
 })
