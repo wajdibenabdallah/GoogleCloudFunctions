@@ -13,6 +13,8 @@ app.use(bodyParser.urlencoded({
 
 app.use(cors());
 
+const bucketName = 'sfeircvgenerator-storage';
+
 exports.generateSFEIRCV = (req, res) => {
 
     console.log('Check environment => ' + process.env.NODE_ENV);
@@ -24,7 +26,6 @@ exports.generateSFEIRCV = (req, res) => {
     const storage = new Storage({
         projectId: 'sfeircvgenerator',
     });
-    const bucketName = 'sfeircvgenerator-storage';
 
     storage
         .getBuckets()
@@ -32,45 +33,15 @@ exports.generateSFEIRCV = (req, res) => {
             const buckets = results[0];
             buckets.forEach((bucket) => {
                 if (bucket.name === bucketName) {
-                    const pdf = require('html-pdf');
-                    let cvName = req.body.cvName + '.pdf' || 'no cvName found';
+                    let cvName = (req.body.cvName || 'unnamed') + '.pdf';
                     let email = req.body.email || 'wajdibenabdalla@gmail.com';
                     let htmlTextContent = req.body.htmlTextContent ||
                         `<html><title></title><body>No HTML found</body></html>`;
 
-                    if (process.env.NODE_ENV === 'development') {
-                        htmlTextContent = fs.readFileSync(path.join(__dirname, '/test_data/test.html'), 'utf8');
-                        pdf.create(htmlTextContent, {format: 'A4'})
-                            .toBuffer(function (err, buffer) {
-                                if (err) return console.log(err);
-                                fs.writeFile("test1.pdf", buffer, "binary", function (err) {
-                                    if (err) {
-                                        res.send(err);
-                                    } else {
-                                        res.send("The file was saved!");
-                                    }
-                                });
-                            });
-                    } else if (process.env.NODE_ENV === 'production') {
-                        pdf.create(htmlTextContent, {format: 'A4'})
-                            .toBuffer(function (error, buffer) {
-                                if (error) return console.log(error);
-                                const myFileBucket = bucket.file(cvName);
-                                myFileBucket.save(`Hello my name is wajdi`).then(() => {
-                                    myFileBucket.makePublic().then(() => {
-                                        console.log('The file is public now');
-                                        let link = `https://storage.googleapis.com/${bucketName}/${cvName}`;
-                                        sendMail(email, link).then((redirect) => {
-                                            res.send(JSON.stringify({url: redirect}));
-                                        }).catch((error) => {
-                                            console.dir(error);
-                                        })
-                                    })
-                                })
-                            });
-                    } else {
-                        res.status(404).send('unknown environment');
-                    }
+                    // if (process.env.NODE_ENV === 'development')
+                    // htmlTextContent = fs.readFileSync(path.join(__dirname, '/test_data/test2.html'), 'utf8');
+                    uploadFile(bucket, htmlTextContent, cvName, email);
+
                 } else {
                     res.status(404).send('No bucket');
                 }
@@ -79,7 +50,28 @@ exports.generateSFEIRCV = (req, res) => {
         .catch((err) => {
             console.error('ERROR:', err);
         });
+
+    function uploadFile(bucket, htmlTextContent, cvName, email) {
+        const pdf = require('html-pdf');
+        pdf.create(htmlTextContent, {format: 'A4'})
+            .toBuffer(function (error, buffer) {
+                if (error) return console.log(error);
+                const myFileBucket = bucket.file(cvName);
+                myFileBucket.save(buffer).then(() => {
+                    myFileBucket.makePublic().then(() => {
+                        console.log('The file is public now');
+                        let link = `https://storage.cloud.google.com/${bucketName}/${cvName}`;
+                        sendMail(email, link).then((redirect) => {
+                            res.send(JSON.stringify({url: redirect, link: link}));
+                        }).catch((error) => {
+                            console.dir(error);
+                        })
+                    })
+                })
+            });
+    }
 };
+
 
 async function sendMail(email, link) {
 
