@@ -37,9 +37,10 @@ exports.generateSFEIRCV = (req, res) => {
                     let email = req.body.email || 'wajdibenabdalla@gmail.com';
                     let htmlTextContent = req.body.htmlTextContent ||
                         `<html><title></title><body>No HTML found</body></html>`;
-
-                    // if (process.env.NODE_ENV === 'development')
-                    // htmlTextContent = fs.readFileSync(path.join(__dirname, '/test_data/test2.html'), 'utf8');
+                    /*
+                       if (process.env.NODE_ENV === 'development')
+                           htmlTextContent = fs.readFileSync(path.join(__dirname, '/test_data/test2.html'), 'utf8');
+                    */
                     uploadFile(bucket, htmlTextContent, cvName, email);
 
                 } else {
@@ -64,7 +65,7 @@ exports.generateSFEIRCV = (req, res) => {
                         sendMail(email, link).then((redirect) => {
                             res.send(JSON.stringify({url: redirect, link: link}));
                         }).catch((error) => {
-                            console.dir(error);
+                            res.status(500).send(error);
                         })
                     })
                 })
