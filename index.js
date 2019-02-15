@@ -56,14 +56,12 @@ exports.generateSFEIRCV = (req, res) => {
                             .toBuffer(function (error, buffer) {
                                 if (error) return console.log(error);
                                 const myFileBucket = bucket.file(cvName);
-                                const encryptionKey = crypto.randomBytes(32);
-                                myFileBucket.setEncryptionKey(encryptionKey);
-                                myFileBucket.save(buffer).then(() => {
+                                myFileBucket.save(`Hello my name is wajdi`).then(() => {
                                     myFileBucket.makePublic().then(() => {
                                         console.log('The file is public now');
                                         let link = `https://storage.googleapis.com/${bucketName}/${cvName}`;
                                         sendMail(email, link).then((redirect) => {
-                                            res.send('Le mail a été envoyé : ' + redirect);
+                                            res.send(JSON.stringify({url: redirect}));
                                         }).catch((error) => {
                                             console.dir(error);
                                         })
