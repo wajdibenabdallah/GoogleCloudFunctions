@@ -11,6 +11,8 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
+app.use(bodyParser.json()); // support json encoded bodies
+
 app.use(cors());
 
 const bucketName = 'sfeircvgenerator-storage';
