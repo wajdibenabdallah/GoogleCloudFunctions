@@ -56,8 +56,17 @@ exports.generateSFEIRCV = (req, res) => {
 
     function uploadFile(bucket, htmlTextContent, cvName, email) {
         const pdf = require('html-pdf');
-        pdf.create(htmlTextContent, {format: 'A4'})
+        pdf.create(htmlTextContent, {format: 'A4', type: 'pdf'})
             .toBuffer(function (error, buffer) {
+                if (process.env.NODE_ENV === 'development') {
+                    fs.writeFile("test.pdf", buffer, "binary", function (err) {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            console.log("The file was saved!");
+                        }
+                    });
+                }
                 if (error) return console.log(error);
                 const myFileBucket = bucket.file(cvName);
                 myFileBucket.save(buffer).then(() => {
